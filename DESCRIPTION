@@ -1,0 +1,29 @@
+Package: HLAfix
+Type: Package
+Title: HLA Analysis Pipeline for large-scale Association Studies
+Version: 0.1.0
+Date: 2019-04-16
+Author: Ayan IANNIELLO
+Maintainer: Ayan IANNIELLO <ayan.ianniello@etu.univ-nantes.fr>
+SystemRequirements: bash , perl, awk 
+Imports:
+  cowplot,
+  ggplot2 ,
+  ggrepel ,
+  HIBAG,
+  plotrix,
+  qqman ,
+  R.utils , 
+  snpStats , 
+  stats ,
+  stringr ,
+  utils 
+Description: Analyze association between HLA and phenotype (disease or quantitative phenotypes).  
+      It analyze HLA alleles, haplotypes, Amino-Acid, HLA-C expression and KIR ligands.
+Suggests:
+    devtools,
+    roxygen2
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
