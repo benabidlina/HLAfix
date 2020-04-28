@@ -20,7 +20,6 @@ globalVariables(c("V3","V4" , "group","too_close","values","green","alleles","PC
 #' @return Write a summary of the data after the quality control and cleaned file
 #' @export
 #'
-
 firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outputFolder , outputFile)
 {
   # Check Parameters
@@ -54,21 +53,50 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
 
   ################ Quality control execution via bash script ################
   mind <- readline(prompt = " \n SNP missingness by individual (mind)? ")
-    if( mind < 0 || mind > 1 ) {stop("mind must be a value between 0-1")}
+  if( mind < 0 || mind > 1 ) {stop("mind must be a value between 0-1")}
   geno <- readline(prompt = "\n SNP missingness in genotype (geno)? ")
-    if( geno < 0 || geno > 1 ) {stop("geno must be a value between 0-1")}
+  if( geno < 0 || geno > 1 ) {stop("geno must be a value between 0-1")}
   maf <- readline(prompt = "\n SNP minor allelic frequency threshold (maf)? ")
-    if( maf < 0 || maf > 1 ) {stop("maf must be a value between 0-1")}
+  if( maf < 0 || maf > 1 ) {stop("maf must be a value between 0-1")}
   hwe <- readline(prompt = "\n SNP Hardy weinberg equilibrium threshold (hwe)? ")
-    if( hwe < 0 || hwe > 1 ) {stop("hwe must be a value between 0-1")}
+  if( hwe < 0 || hwe > 1 ) {stop("hwe must be a value between 0-1")}
 
 
   script <- system.file("Shell", "firstQC_script2.sh" , package="HLAfix" ) # load a script bash from inst/ folder in the HLAfix package
   system(paste("sh", script , bimFile , outputFolder ,outputFile, mind, geno , maf , hwe , sep = " " ))
 
+  ################ Genotype Summary Before QC  ################
+  plinkFile <- gsub(".bim","", bimFile) #user's file without extension
+  if(file.exists(paste(outputFolder,"tmp/input_goodID.bim",sep = "")))
+  {
+    genotype <- snpStats::read.plink(bed = paste(outputFolder,"tmp/input_goodID.bed",sep = ""), paste(outputFolder,"tmp/input_goodID.bim",sep = ""), paste(outputFolder,"tmp/input_goodID.fam",sep = "") ,na.strings = "-9" )
+  }else{
+    genotype <- snpStats::read.plink( bedFile , bimFile , famFile,sep="." ,na.strings = "-9" )
+  }
+  statutDisease <- genotype$fam[,c(2,6)]
+  ctrlNumber <-  nrow(statutDisease[statutDisease[,2]==1,2])
+  if(is.null(ctrlNumber)){ctrlNumber <- 0}
+  caseNumber <-  nrow(statutDisease[statutDisease[,2]==2,2])
+  if(is.null(caseNumber)){caseNumber <- 0}
+  indNumber <- R.utils::countLines(famFile)
+  snpNumber <- R.utils::countLines(bimFile)
+  ### Small table
+  cat( "\n",
+       " .-------------------------------------------.\n",
+       "|            Summary of input data           |\n",
+       "+-------------------------+------------------+\n"  ,
+       "|  Number of individuals  |  Numbers of SNP  |\n",
+       "+-------------------------+------------------+\n"  ,
+       "|         ", indNumber , "                               |\n",
+       "+------------+------------+------------------+\n" ,
+       "|  Control   |     Case   |                  |\n",
+       "+------------+------------+------------------+\n" ,
+       "|    ", ctrlNumber , "         ", caseNumber ,"             ", snpNumber , "    |\n",
+       "+-------------------------+------------------+\n \n"   )
+
   ################ Qualty Control and summary of big steps  ################
   if(isTRUE(file.exists(paste( outputFolder, "clean/clean1.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "clean/clean2.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "clean/clean3.bim" , sep = ""))))
- {
+  {
     clean1_snp <- R.utils::countLines(paste( outputFolder, "clean/clean1.bim" , sep = ""))
     clean1_snp <- gsub("[A-Z]/.,:", "", clean1_snp)
     clean1_ind <-  R.utils::countLines(paste(outputFolder, "clean/clean1.fam" , sep = ""))
@@ -101,11 +129,10 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
       cat("\n" )
     }
 
-     cat("--mind ", mind , " --geno " , geno ," --hwe ", hwe  ," --maf ", maf ,
+    cat("--mind ", mind , " --geno " , geno ," --hwe ", hwe  ," --maf ", maf ,
         "\n ", clean3_snp ," SNPs and " , clean3_ind , " peoples remained. \n")
 
- }
-
+  }
 
 
 #############################################################
@@ -261,8 +288,7 @@ popStrat <- function( bedFile ,  bimFile  , famFile  , workingFolder)
   # remove intermediary files created
   system(paste("rm ",workingFolder,"1KG_subset* ",workingFolder,"merged_data* ",workingFolder,"sample_subset* ",workingFolder,"sample_snp_list.txt " , sep = "" ))
 }
-
-
+}
 
 
 
