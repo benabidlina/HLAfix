@@ -27,3 +27,5 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
+URL: https://github.com/benabidlina/HLAfix
+BugReports: https://github.com/benabidlina/HLAfix/issues
