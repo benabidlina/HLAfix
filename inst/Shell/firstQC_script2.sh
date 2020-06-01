@@ -24,8 +24,6 @@ plink(){
 }
 export plink
 
-if  [ $# -ne 8 ] ;
-
 x=$1
 y=$(echo $x | tail -c 5)
 
@@ -175,4 +173,5 @@ fi
 		fi
 	fi
 fi
+
 ##> /dev/null 2>&1 pour rédiriger les output vers s +)à
