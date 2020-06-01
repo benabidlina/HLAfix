@@ -4,8 +4,14 @@
 \alias{firstQC}
 \title{Do a standardised quality control, it cleans your data by removing not informative's SNP and analyze stratification of your population}
 \usage{
-firstQC(bedFile = NULL, bimFile = NULL, famFile = NULL, vcf = NULL,
-  outputFolder, outputFile)
+firstQC(
+  bedFile = NULL,
+  bimFile = NULL,
+  famFile = NULL,
+  vcf = NULL,
+  outputFolder,
+  outputFile
+)
 }
 \arguments{
 \item{bedFile}{.bed file containing the packed binary SNP genotype data}
@@ -19,6 +25,8 @@ firstQC(bedFile = NULL, bimFile = NULL, famFile = NULL, vcf = NULL,
 \item{outputFolder}{folder where to save the result}
 
 \item{outputFile}{Name wanted for your VCF}
+
+\item{shFile}{absolute path of the bash script for quality control}
 }
 \value{
 Write a summary of the data after the quality control and cleaned file

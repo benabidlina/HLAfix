@@ -2,13 +2,27 @@
 % Please edit documentation in R/part3.R
 \name{hlaKIRAnalysis}
 \alias{hlaKIRAnalysis}
-\title{HLA KIR ligand analysis with multiple phenotypes or in case/control}
+\title{Analyze association of HLA KIR ligands with many variate phenotypes (like case/control or quantitative trait)
+Take as input:
+(1 required) KIR ligands  :  subjectID haplotype1 freq1  haplotype2 freq2 postprob ("," separator between fields)
+(2 optional) differents quantitative phenotypes : subjectID traitName1 traitName2 ... traitName(n)
+(3 required) Disease information : 0= control 1=case (needed for frequencies and/or type=disease analysis)
+(4 required) the 2 first principals components of the PCA
+(5 optional) covariable to correct regressions}
 \usage{
-hlaKIRAnalysis(datapath, phenoPath = NULL, statut, pcaPath = NULL,
-  covarPath = NULL, outputFolder, outputFile, type = "pheno")
+hlaKIRAnalysis(
+  datapath,
+  phenoPath = NULL,
+  statut,
+  pcaPath = NULL,
+  covarPath = NULL,
+  outputFolder,
+  outputFile,
+  type = "pheno"
+)
 }
 \arguments{
-\item{datapath}{File from Easy-HLA}
+\item{datapath}{HLA File from Easy-HLA}
 
 \item{phenoPath}{phenotypes file with different trait names in columns}
 
@@ -28,5 +42,11 @@ hlaKIRAnalysis(datapath, phenoPath = NULL, statut, pcaPath = NULL,
 Regression result in a file with columns: Amino_Acid	Frequency	Frequency_control	Frequency_case	N	P_allelic	OR_allelic	lower_95%_CI_allelic	upper_95%_CI_allelic	Beta_allelic	SE_allelic	P_dominant	OR_dominant	lower_95%_CI_dominant	upper_95%_CI_dominant	Beta_dominant	SE_dominant
 }
 \description{
-HLA KIR ligand analysis with multiple phenotypes or in case/control
+Analyze association of HLA KIR ligands with many variate phenotypes (like case/control or quantitative trait)
+Take as input:
+(1 required) KIR ligands  :  subjectID haplotype1 freq1  haplotype2 freq2 postprob ("," separator between fields)
+(2 optional) differents quantitative phenotypes : subjectID traitName1 traitName2 ... traitName(n)
+(3 required) Disease information : 0= control 1=case (needed for frequencies and/or type=disease analysis)
+(4 required) the 2 first principals components of the PCA
+(5 optional) covariable to correct regressions
 }

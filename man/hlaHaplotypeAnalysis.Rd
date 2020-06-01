@@ -2,32 +2,51 @@
 % Please edit documentation in R/part3.R
 \name{hlaHaplotypeAnalysis}
 \alias{hlaHaplotypeAnalysis}
-\title{Analysis of HLA haplotypes and many phenotypes}
+\title{Analyze association of HLA haplotypes with many variate phenotypes (like case/control or quantitative trait)
+Take as input:
+(1 required) haplotypes :  subjectID haplotype1 freq1  haplotype2 freq2 postprob ("," separator between fields)
+(2 optional) differents quantitative phenotypes : subjectID traitName1 traitName2 ... traitName(n)
+(3 required) Disease information : 0= control 1=case (needed for frequencies and/or type=disease analysis)
+(4 required) the 2 first principals components of the PCA
+(5 optional) covariable to correct regressions}
 \usage{
-hlaHaplotypeAnalysis(haploDataPath, statut, phenoPath = NULL,
-  pcaPath = NULL, covarPath = NULL, outputFolder, outputFile,
-  type = "pheno")
+hlaHaplotypeAnalysis(
+  haploDataPath,
+  statut,
+  phenoPath = NULL,
+  pcaPath = NULL,
+  covarPath = NULL,
+  outputFolder,
+  outputFile,
+  type = "pheno"
+)
 }
 \arguments{
-\item{haploDataPath}{Hla haplotypes file pathways}
+\item{haploDataPath}{HLA haplotypes data exactly as the one provided by easy-HLA webtool}
 
 \item{statut}{file conaining subject ID and Disease statut}
 
-\item{phenoPath}{phenotypes file with different trait names in columns}
+\item{phenoPath}{phenotypes file with different trait's names in columns}
 
-\item{pcaPath}{pca result for PC1 and PC2}
+\item{pcaPath}{pca's result: subjectID, PC1 and PC2}
 
 \item{covarPath}{must contains SubjectID followed by covariables}
 
 \item{outputFolder}{folder where to save the result}
 
-\item{outputFile}{Name for the result csv file with columns: subjectID    Disease    PC1    PC2    A    A    B    B    C    C    DRB1    DRB1    DQB1    DQB1}
+\item{outputFile}{result's filename}
 
-\item{type}{etiher "disease" for analysis in case/control or "pheno" for analysis with an quantitative phenotype}
+\item{type}{either "disease" for case/control analysis or "pheno" with quantitative phenotype(s)}
 }
 \value{
-Linear Regression result with the phenotypes as covariates
+Linear Regression result and many plots : QQplot and personnalized manhattan plot
 }
 \description{
-Analysis of HLA haplotypes and many phenotypes
+Analyze association of HLA haplotypes with many variate phenotypes (like case/control or quantitative trait)
+Take as input:
+(1 required) haplotypes :  subjectID haplotype1 freq1  haplotype2 freq2 postprob ("," separator between fields)
+(2 optional) differents quantitative phenotypes : subjectID traitName1 traitName2 ... traitName(n)
+(3 required) Disease information : 0= control 1=case (needed for frequencies and/or type=disease analysis)
+(4 required) the 2 first principals components of the PCA
+(5 optional) covariable to correct regressions
 }

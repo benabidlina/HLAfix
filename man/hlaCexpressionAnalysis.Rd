@@ -4,9 +4,16 @@
 \alias{hlaCexpressionAnalysis}
 \title{HLA-C expression analys many variate phenotypes}
 \usage{
-hlaCexpressionAnalysis(dataPath, phenoPath = NULL, statut = NULL,
-  pcaPath = NULL, covarPath = NULL, outputFolder, outputFile,
-  type = "pheno")
+hlaCexpressionAnalysis(
+  dataPath,
+  phenoPath = NULL,
+  statut = NULL,
+  pcaPath = NULL,
+  covarPath = NULL,
+  outputFolder,
+  outputFile,
+  type = "pheno"
+)
 }
 \arguments{
 \item{dataPath}{file with subject.ID and HLA-c expression "quantitative"}

@@ -2,32 +2,51 @@
 % Please edit documentation in R/part3.R
 \name{hlaAminoAcidAnalysis}
 \alias{hlaAminoAcidAnalysis}
-\title{HLA Amino-acids analysis with multiple}
+\title{Analyze association of HLA Amino-acids with many variate phenotypes (like case/control or quantitative trait)
+Take as input:
+(1 required) amino-acids :  subjectID haplotype1 freq1  haplotype2 freq2 postprob followed by many columns of amino-acids("," separator between fields)
+(2 optional) differents quantitative phenotypes : subjectID traitName1 traitName2 ... traitName(n)
+(3 required) Disease information : 0= control 1=case (needed for frequencies and/or type=disease analysis)
+(4 required) the 2 first principals components of the PCA
+(5 optional) covariable to correct regressions}
 \usage{
-hlaAminoAcidAnalysis(aminoAcidFile, phenoPath = NULL, statut,
-  pcaPath = NULL, covarPath = NULL, outputFolder, outputFile,
-  type = "pheno")
+hlaAminoAcidAnalysis(
+  aminoAcidFile,
+  phenoPath = NULL,
+  statut,
+  pcaPath = NULL,
+  covarPath = NULL,
+  outputFolder,
+  outputFile,
+  type = "pheno"
+)
 }
 \arguments{
-\item{aminoAcidFile}{File from Easy-HLA}
+\item{aminoAcidFile}{HLA Amino-acids data exactly as the one provided by easy-HLA webtool}
 
 \item{phenoPath}{phenotypes file with different trait names in columns}
 
 \item{statut}{file conaining subject ID and Disease statut}
 
-\item{pcaPath}{pca result for PC1 and PC2}
+\item{pcaPath}{pca's result: subjectID, PC1 and PC2}
 
 \item{covarPath}{must contains SubjectID followed by covariables}
 
-\item{outputFolder}{Folder's pathways where to save the result file}
+\item{outputFolder}{folder where to save the result}
 
-\item{outputFile}{Name of the result file}
+\item{outputFile}{result's filename}
 
-\item{type}{etiher "disease" for analysis in case/control or "pheno" for analysis with an quantitative phenotype}
+\item{type}{either "disease" for case/control analysis or "pheno" with quantitative phenotype(s)}
 }
 \value{
-Regression result in a file with columns: Amino_Acid	Frequency	Frequency_control	Frequency_case	N	P_allelic	OR_allelic	lower_95%_CI_allelic	upper_95%_CI_allelic	Beta_allelic	SE_allelic	P_dominant	OR_dominant	lower_95%_CI_dominant	upper_95%_CI_dominant	Beta_dominant	SE_dominant
+Linear Regression result and many plots : QQplot and personnalized manhattan plot
 }
 \description{
-HLA Amino-acids analysis with multiple
+Analyze association of HLA Amino-acids with many variate phenotypes (like case/control or quantitative trait)
+Take as input:
+(1 required) amino-acids :  subjectID haplotype1 freq1  haplotype2 freq2 postprob followed by many columns of amino-acids("," separator between fields)
+(2 optional) differents quantitative phenotypes : subjectID traitName1 traitName2 ... traitName(n)
+(3 required) Disease information : 0= control 1=case (needed for frequencies and/or type=disease analysis)
+(4 required) the 2 first principals components of the PCA
+(5 optional) covariable to correct regressions
 }

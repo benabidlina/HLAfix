@@ -2,30 +2,36 @@
 % Please edit documentation in R/part3.R
 \name{hlaAlleleAnalysis}
 \alias{hlaAlleleAnalysis}
-\title{Analysis of HLA allele and many variate phenotypes}
+\title{Analyze association of HLA alleles with many variate phenotypes (like case/control or quantitative trait)}
 \usage{
-hlaAlleleAnalysis(dataPath, phenoPath = NULL, covarPath = NULL,
-  outputFolder, outputFile, type = "pheno")
+hlaAlleleAnalysis(
+  dataPath,
+  phenoPath = NULL,
+  covarPath = NULL,
+  outputFolder,
+  outputFile,
+  type = "pheno"
+)
 }
 \arguments{
-\item{dataPath}{Hla allele file pathways. Contains  with columns: subjectID    Disease    PC1    PC2    A    A    B    B    C    C    DRB1    DRB1    DQB1    DQB1.}
+\item{dataPath}{HLA alleles file}
 
-\item{phenoPath}{phenotypes file with different trait names in columns}
+\item{phenoPath}{phenotypes file with different trait's names in columns}
 
 \item{covarPath}{must contains SubjectID followed by covariables}
 
 \item{outputFolder}{folder where to save the result}
 
-\item{outputFile}{Name for the result csv file}
+\item{outputFile}{result's filename}
 
-\item{type}{etiher "disease" for analysis in case/control or "pheno" for analysis with an quantitative phenotype}
+\item{type}{either "disease" for case/control analysis or "pheno" with quantitative phenotype(s)}
 }
 \value{
-Linear Regression result with the phenotypes as covariates
+Linear Regression result and many plots : QQplot, personnalized manhattan plot and/or variation of phenotype's expression
 }
 \description{
-Take a file containing 14 colunms as input
-     subjectID Disease PC1 PC2  A A B B C C DRB1 DRB1 DQB1 DQB1 ("," separator between fields)
-AND a file with differents phenotypes :
-     subjectID traitName1 traitName2 traitName3 traitName4 traitName5
+Take as input :
+(1) a file containing the following 14 colunms :  subjectID Disease PC1 PC2  A A B B C C DRB1 DRB1 DQB1 DQB1 ("," separator between fields)
+(2 optional) file with differents quantitative phenotypes : subjectID traitName1 traitName2 ... traitName(n)
+(3 optional) file with covariable to correct regressions
 }

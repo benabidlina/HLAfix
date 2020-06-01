@@ -2,39 +2,54 @@
 % Please edit documentation in R/part3.R
 \name{pvalueCorrection}
 \alias{pvalueCorrection}
-\title{Function that correct P value for alleles or haplotypes or Amino Acids. Propose 2 differents methods: bonferroni with allele's regression result or Permutation by redoing regression over 1000 times or different number of loop.}
+\title{Function that correct P-value for HLA alleles, haplotypes or Amino Acids, kir ligand and HLA-C expression. Propose 2 differents methods: bonferroni with allele's regression result or Permutation by redoing regression over 1000 times or different number of loop.}
 \usage{
-pvalueCorrection(allele = NULL, haplo = NULL, AA = NULL,
-  KIR = NULL, HLAC = NULL, alleleRegResult = NULL,
-  haploRegResult = NULL, AARegResult = NULL, pcaFile = NULL,
-  statut = NULL, correction = "bonferroni")
+pvalueCorrection(
+  allele = NULL,
+  haplo = NULL,
+  AA = NULL,
+  KIR = NULL,
+  HLAC = NULL,
+  alleleRegResult = NULL,
+  haploRegResult = NULL,
+  AARegResult = NULL,
+  kirRegResult = NULL,
+  hlaCRegResult = NULL,
+  pcaFile = NULL,
+  statut = NULL,
+  correction = "bonferroni"
+)
 }
 \arguments{
-\item{allele}{Imputation's result file with 14 colunms : subjectID, Disease, PC1, PC2, prob, A, A, B, B, C, C, DRB1, DRB1, DQB1, DQB1 ("," separator between fields)}
+\item{allele}{(permutation) Imputation's result file with 14 colunms : subjectID, Disease, PC1, PC2, prob, A, A, B, B, C, C, DRB1, DRB1, DQB1, DQB1 ("," separator between fields)}
 
-\item{haplo}{Haplotypes file with at least these columns : subjectID,    A-B-C-DR-DQ-1,    freq1,    A-B-C-DR-DQ-2,    freq2,    PostP ("," separator between fields)}
+\item{haplo}{(permutation) Haplotypes file with at least these columns : subjectID,    A-B-C-DR-DQ-1,    freq1,    A-B-C-DR-DQ-2,    freq2,    PostP ("," separator between fields)}
 
-\item{AA}{Amino-Acid File from easy-hla}
+\item{AA}{(permutation) Amino-Acid File from easy-hla}
 
-\item{KIR}{KIR ligand's file from easy-hla}
+\item{KIR}{(permutation) KIR ligand's file from easy-hla}
 
-\item{HLAC}{HLAC expression as provided by easy-hla}
+\item{HLAC}{(permutation) HLAC expression as provided by easy-hla}
 
-\item{alleleRegResult}{result file of Regression on allele : function allelicReg}
+\item{alleleRegResult}{(bonferroni) result file of Regression on allele : function}
 
-\item{haploRegResult}{result file of Regression on haplotypes : function haploReg}
+\item{haploRegResult}{(bonferroni) result file of Regression on haplotypes : function}
 
-\item{AARegResult}{result file of Regression on AA : function aaReg}
+\item{AARegResult}{(bonferroni) result file of Regression on AA : function}
+
+\item{kirRegResult}{(bonferroni) result file of Regression on kir ligands : function}
+
+\item{hlaCRegResult}{(bonferroni) result file of Regression on kir ligands : function}
 
 \item{pcaFile}{FIle with sample id and two principal components of PCA}
 
 \item{statut}{File with sample id and disease statut (coded 0 1)}
 
-\item{correction}{Method to correct P value  and display a line of the new critical P value.}
+\item{correction}{Method to correct P value: permutation or bonferroni (default).}
 }
 \value{
 Return a list with the new critical P value for each level of analysis: seuilAllele, seuilHaplo and seuilAA
 }
 \description{
-Function that correct P value for alleles or haplotypes or Amino Acids. Propose 2 differents methods: bonferroni with allele's regression result or Permutation by redoing regression over 1000 times or different number of loop.
+Function that correct P-value for HLA alleles, haplotypes or Amino Acids, kir ligand and HLA-C expression. Propose 2 differents methods: bonferroni with allele's regression result or Permutation by redoing regression over 1000 times or different number of loop.
 }

@@ -4,9 +4,16 @@
 \alias{hlaImputation}
 \title{Impute HLA allele by using HiBAG package}
 \usage{
-hlaImputation(bedFile, bimFile, famFile, hlaLoci = c("A", "B", "C",
-  "DRB1", "DQB1"), trainingModel = NULL, pcaFile, outputFolder,
-  probThreshold = 0.5)
+hlaImputation(
+  bedFile,
+  bimFile,
+  famFile,
+  hlaLoci = c("A", "B", "C", "DRB1", "DQB1"),
+  trainingModel = NULL,
+  pcaFile,
+  outputFolder,
+  probThreshold = 0.5
+)
 }
 \arguments{
 \item{bedFile}{.bed file containing the packed binary SNP genotype data}
