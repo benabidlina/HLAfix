@@ -3,8 +3,8 @@ Type: Package
 Title: HLA Analysis Pipeline for large-scale Association Studies
 Version: 0.1.0
 Date: 2019-04-16
-Author: Ayan IANNIELLO
-Maintainer: Ayan IANNIELLO <ayan.ianniello@etu.univ-nantes.fr>
+Author: Ayan IANNIELLO & Lina BENABID
+Maintainer: Ayan IANNIELLO <ayan.ianniello@etu.univ-nantes.fr> & Lina BENABID <lina.ben-abid@etu.univ-amu.fr>
 SystemRequirements: bash , perl, awk 
 Imports:
   cowplot,
