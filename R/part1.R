@@ -54,21 +54,50 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
 
   ################ Quality control execution via bash script ################
   mind <- readline(prompt = " \n SNP missingness by individual (mind)? ")
-    if( mind < 0 || mind > 1 ) {stop("mind must be a value between 0-1")}
+  if( mind < 0 || mind > 1 ) {stop("mind must be a value between 0-1")}
   geno <- readline(prompt = "\n SNP missingness in genotype (geno)? ")
-    if( geno < 0 || geno > 1 ) {stop("geno must be a value between 0-1")}
+  if( geno < 0 || geno > 1 ) {stop("geno must be a value between 0-1")}
   maf <- readline(prompt = "\n SNP minor allelic frequency threshold (maf)? ")
-    if( maf < 0 || maf > 1 ) {stop("maf must be a value between 0-1")}
+  if( maf < 0 || maf > 1 ) {stop("maf must be a value between 0-1")}
   hwe <- readline(prompt = "\n SNP Hardy weinberg equilibrium threshold (hwe)? ")
-    if( hwe < 0 || hwe > 1 ) {stop("hwe must be a value between 0-1")}
+  if( hwe < 0 || hwe > 1 ) {stop("hwe must be a value between 0-1")}
 
 
   script <- system.file("Shell", "firstQC_script2.sh" , package="HLAfix" ) # load a script bash from inst/ folder in the HLAfix package
   system(paste("sh", script , bimFile , outputFolder ,outputFile, mind, geno , maf , hwe , sep = " " ))
 
+  ################ Genotype Summary Before QC  ################
+  plinkFile <- gsub(".bim","", bimFile) #user's file without extension
+  if(file.exists(paste(outputFolder,"tmp/input_goodID.bim",sep = "")))
+  {
+    genotype <- snpStats::read.plink(bed = paste(outputFolder,"tmp/input_goodID.bed",sep = ""), paste(outputFolder,"tmp/input_goodID.bim",sep = ""), paste(outputFolder,"tmp/input_goodID.fam",sep = "") ,na.strings = "-9" )
+  }else{
+    genotype <- snpStats::read.plink( bedFile , bimFile , famFile,sep="." ,na.strings = "-9" )
+  }
+  statutDisease <- genotype$fam[,c(2,6)]
+  ctrlNumber <-  nrow(statutDisease[statutDisease[,2]==1,2])
+  if(is.null(ctrlNumber)){ctrlNumber <- 0}
+  caseNumber <-  nrow(statutDisease[statutDisease[,2]==2,2])
+  if(is.null(caseNumber)){caseNumber <- 0}
+  indNumber <- R.utils::countLines(famFile)
+  snpNumber <- R.utils::countLines(bimFile)
+  ### Small table
+  cat( "\n",
+       " .-------------------------------------------.\n",
+       "|            Summary of input data           |\n",
+       "+-------------------------+------------------+\n"  ,
+       "|  Number of individuals  |  Numbers of SNP  |\n",
+       "+-------------------------+------------------+\n"  ,
+       "|         ", indNumber , "                               |\n",
+       "+------------+------------+------------------+\n" ,
+       "|  Control   |     Case   |                  |\n",
+       "+------------+------------+------------------+\n" ,
+       "|    ", ctrlNumber , "         ", caseNumber ,"             ", snpNumber , "    |\n",
+       "+-------------------------+------------------+\n \n"   )
+
   ################ Qualty Control and summary of big steps  ################
   if(isTRUE(file.exists(paste( outputFolder, "clean/clean1.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "clean/clean2.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "clean/clean3.bim" , sep = ""))))
- {
+  {
     clean1_snp <- R.utils::countLines(paste( outputFolder, "clean/clean1.bim" , sep = ""))
     clean1_snp <- gsub("[A-Z]/.,:", "", clean1_snp)
     clean1_ind <-  R.utils::countLines(paste(outputFolder, "clean/clean1.fam" , sep = ""))
@@ -101,11 +130,31 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
       cat("\n" )
     }
 
-     cat("--mind ", mind , " --geno " , geno ," --hwe ", hwe  ," --maf ", maf ,
+    cat("--mind ", mind , " --geno " , geno ," --hwe ", hwe  ," --maf ", maf ,
         "\n ", clean3_snp ," SNPs and " , clean3_ind , " peoples remained. \n")
 
- }
+  }
 
+  ################ Genotype Summary after QC  ################
+  if(file.exists(paste(outputFolder , outputFile , "_postQC.bed" , sep = "")))
+  {
+    geno <- snpStats::read.plink(paste(outputFolder , outputFile , "_postQC.bed" , sep = "") , paste(outputFolder, outputFile , "_postQC.bim" , sep = "") , paste(outputFolder, outputFile , "_postQC.fam" , sep = "") , na.strings = "-9" )
+    snp <- R.utils::countLines(paste( outputFolder, "clean/clean1.bim" , sep = ""))
+    snp <- gsub("[A-Z]/.,:", "", clean1_snp)
+    ind <-  R.utils::countLines(paste(outputFolder, "clean/clean1.fam" , sep = ""))
+    ind <- gsub("[A-Z]/.,:", "", clean1_ind)
+
+    cat( "\n",
+         "@--------------------------------------------@\n",
+         "|            Summary of post QC data         |\n",
+         "+-------------------------+------------------+\n"  ,
+         "|  Number of individuals  |  Numbers of SNP  |\n",
+         "+-------------------------+------------------+\n"  ,
+         "|         ", indNumber , "                    " , snp ,"   |\n",
+         "@-------------------------+------------------@\n \n"   )
+
+  }
+}
 
 
 #############################################################
@@ -150,7 +199,7 @@ plink2vcf <- function( dataFolder, plinkFile, outputFile, outputFolder){
   }
 
 
-   ## reference genome from HRC
+  ## reference genome from HRC
   system(paste("wget -nc ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1/HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz -P ", outputFolder ,sep="")) # -c for continue the download if for a reason or another it is in pause and -p for
 
   if(file.exists(paste(outputFolder,"HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz",sep="")))
@@ -226,8 +275,30 @@ popStrat <- function( bedFile ,  bimFile  , famFile  , workingFolder)
   panelFile <- system.file("extdata", "info_pop.csv", package = "HLAfix")
   panel <- read.csv(panelFile, header = TRUE,sep = "," )
 
- ## check for create plot acp !!!!
+  # Create a colunm with pop name for 1KG individuals
+  for(x in panel[!is.na(panel[,1]),1] )
+  { x <- as.character(x)
+  acp[acp[,2]==x,23] <- panel[panel[,1]==x,3]
+  }
 
+  # Recode ASN, YRI, EUR into CHB YRI and CEU
+  acp[,1] <- ifelse(acp$V23=="East_ASN", "East-Asian",
+                    ifelse(acp$V23=="South_ASN", "Indian",
+                           ifelse(acp$V23=="AFR", "AFR",
+                                  ifelse(acp$V23=="EUR", "EUR","sample")))) # remplace col FIID by the group
+
+  # Recode what left into "sample" group
+  suppressWarnings({
+    acp[is.na(acp[,1]),1] <- "sample" # it's working !
+  }) # "sample" is well written for individuals coming from the sample
+
+
+  # Warning message
+  names(acp)[1] <- "group"
+  names(acp)[2] <- "IID"
+  names(acp)[3] <- "PC1"
+  names(acp)[4] <- "PC2"
+  selection <- acp[,c("group","PC1","PC2")]
   ## SAVE THE FILE THAT IS USED FOR THE PLOT
   utils::write.table(acp , paste(workingFolder , "pca_used_for_plot.csv", sep = "") , col.names = TRUE, row.names = FALSE , sep = "," )
   cat(paste(workingFolder , "pca_used_for_plot.csv is saved. \n ", sep = ""))
@@ -236,7 +307,7 @@ popStrat <- function( bedFile ,  bimFile  , famFile  , workingFolder)
   message("Please remove outliers and submit bed bm fam files with homogeneity ")
 
   # ANCESTRY PLOT
-    # acp_plot<- ggplot2::ggplot(selection , aes(x=PC1, y=PC2, color=group)) + geom_point() + ggtitle("Ancestry plot ") + xlab("PC1") + ylab("PC2")
+  # acp_plot<- ggplot2::ggplot(selection , aes(x=PC1, y=PC2, color=group)) + geom_point() + ggtitle("Ancestry plot ") + xlab("PC1") + ylab("PC2")
   data_1kg <- selection[(selection[,"group"]=="EUR" |selection[,"group"]=="East-Asian" | selection[,"group"]=="AFR"| selection[,"group"]=="Indian"),]
   data_sample <- selection[selection[,"group"]=="sample",]
   # Counts
@@ -255,23 +326,12 @@ popStrat <- function( bedFile ,  bimFile  , famFile  , workingFolder)
   colnames(pcaFile)<- c("sample.id","PC1","PC2")
   utils::write.table(pcaFile , paste(workingFolder , "pcaFile.csv", sep = "") , col.names = TRUE, row.names = FALSE , sep = "," )
   grDevices::pdf(file = paste(workingFolder , "Ancestry plot.pdf", sep = ""))
-    print(acp_plot)
+  print(acp_plot)
   grDevices::dev.off()
   rm(panel) # remove from env the panel data
   # remove intermediary files created
   system(paste("rm ",workingFolder,"1KG_subset* ",workingFolder,"merged_data* ",workingFolder,"sample_subset* ",workingFolder,"sample_snp_list.txt " , sep = "" ))
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
