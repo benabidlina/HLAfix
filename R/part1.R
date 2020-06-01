@@ -96,8 +96,7 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
 
 
   ################ Qualty Control and summary of big steps  ################
-  if(isTRUE(file.exists(paste( outputFolder, "/clean/clean1.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "/clean/clean2.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "/clean/clean3.bim" , sep = ""))))
-  {
+  if(isTRUE(file.exists(paste( outputFolder, "/clean/clean1.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "/clean/clean2.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFile, "_postQC.bim" , sep = "")))){
     clean1_snp <- R.utils::countLines(paste( outputFolder, "/clean/clean1.bim" , sep = ""))
     clean1_snp <- gsub("[A-Z]/.,:", "", clean1_snp)
     clean1_ind <- R.utils::countLines(paste( outputFolder, "/clean/clean1.fam" , sep = ""))
@@ -106,10 +105,10 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
     clean2_snp <- gsub("[A-Z]/.,:", "", clean2_snp)
     clean2_ind <- R.utils::countLines(paste( outputFolder, "/clean/clean2.fam" , sep = ""))
     clean2_ind <- gsub("[A-Z]/.,:", "", clean2_ind)
-    clean3_snp <- R.utils::countLines(paste(outputFile , "_postQC.bim" , sep = ""))
-    clean3_snp <- gsub("[A-Z]/.,:", "", clean3_snp)
-    clean3_ind <- R.utils::countLines(paste(outputFile , "_postQC.fam" , sep = ""))
-    clean3_ind <- gsub("[A-Z]/.,:", "", clean3_ind)
+    postQC_snp <- R.utils::countLines(paste(outputFile , "_postQC.bim" , sep = ""))
+    postQC_snp <- gsub("[A-Z]/.,:", "", postQC_snp)
+    postQC_ind <- R.utils::countLines(paste(outputFile , "_postQC.fam" , sep = ""))
+    postQC_ind <- gsub("[A-Z]/.,:", "", postQC_ind)
     if(file.exists(paste( outputFolder, "tmp/snp_chrXYMT_to_exlude.txt" , sep = "")))
     {
       snp_chr <- R.utils::countLines(paste( outputFolder, "tmp/snp_chrXYMT_to_exlude.txt" , sep = ""))
@@ -129,7 +128,7 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
     }
 
     cat("--mind ", mind , " --geno " , geno ," --hwe ", hwe  ," --maf ", maf ,
-        "\n ", clean3_snp ," SNPs and " , clean3_ind , " peoples remained. \n")
+        "\n ", postQC_snp ," SNPs and " , postQC_ind , " peoples remained. \n")
 
   }
 
