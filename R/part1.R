@@ -1,27 +1,25 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(".")
 globalVariables(c("V3","V4" , "group","too_close","values","green","alleles","PC1","PC2"))
 
-
 #######################################################
 ###  QC for imputation & population stratification  ###
 #######################################################
 
-
 #' Do a standardised quality control, it cleans your data by removing not informative's SNP and analyze stratification of your population
-#'
 #' @param bedFile .bed file containing the packed binary SNP genotype data
 #' @param bimFile .bim file containingthe SNP descriptions
 #' @param famFile .fam file containing subject (and, possibly, family) identifiers. This is basically a tab-delimited "pedfile"
 #' @param vcf variant call format file
 #' @param outputFolder folder where to save the result
 #' @param outputFile Name wanted for your VCF
+#' @param shFile absolute path of the bash script for quality control
 #' @importFrom snpStats read.plink col.summary
 #' @importFrom R.utils countLines
 #' @return Write a summary of the data after the quality control and cleaned file
 #' @export
 #'
 
-firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outputFolder , outputFile)
+firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outputFolder , outputFile , shFile = NULL)
 {
   # Check Parameters
   if(!file.exists(bedFile)){stop("bedFile is not found ")}
@@ -62,26 +60,26 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
   hwe <- readline(prompt = "\n SNP Hardy weinberg equilibrium threshold (hwe)? ")
   if( hwe < 0 || hwe > 1 ) {stop("hwe must be a value between 0-1")}
 
-
-  script <- system.file("Shell", "firstQC_script2.sh" , package="HLAfix" ) # load a script bash from inst/ folder in the HLAfix package
-  system(paste("sh", script , bimFile , outputFolder ,outputFile, mind, geno , maf , hwe , sep = " " ))
+  system2( command =  shFile ,args = c( bimFile , outputFolder ,outputFile, mind, geno , maf , hwe ))
 
   ################ Genotype Summary Before QC  ################
-  plinkFile <- gsub(".bim","", bimFile) #user's file without extension
-  if(file.exists(paste(outputFolder,"tmp/input_goodID.bim",sep = "")))
+  plinkFile <- gsub(".bim","", paste(outputFolder,"/tmp/input_goodID_NOduplicate.bim")) #user's file without extension
+  if(file.exists(paste(outputFolder,"/tmp/input_goodID_NOduplicate.bim",sep = "")))
   {
-    genotype <- snpStats::read.plink(bed = paste(outputFolder,"tmp/input_goodID.bed",sep = ""), paste(outputFolder,"tmp/input_goodID.bim",sep = ""), paste(outputFolder,"tmp/input_goodID.fam",sep = "") ,na.strings = "-9" )
+    genotype <- genio::read_plink(paste( outputFolder , "/tmp/input_goodID_NOduplicate" , sep = "") )
   }else{
-    genotype <- snpStats::read.plink( bedFile , bimFile , famFile,sep="." ,na.strings = "-9" )
+    genotype <- genio::read.plink(paste(outputFolder,"/tmp/input_no_duplicate" ,sep = "") )
   }
+
   statutDisease <- genotype$fam[,c(2,6)]
   ctrlNumber <-  nrow(statutDisease[statutDisease[,2]==1,2])
   if(is.null(ctrlNumber)){ctrlNumber <- 0}
   caseNumber <-  nrow(statutDisease[statutDisease[,2]==2,2])
   if(is.null(caseNumber)){caseNumber <- 0}
-  indNumber <- R.utils::countLines(famFile)
-  snpNumber <- R.utils::countLines(bimFile)
-  ### Small table
+  indNumber <- R.utils::countLines(paste(outputFolder,"/tmp/input_no_duplicate.fam" ,sep = ""))
+  snpNumber <- R.utils::countLines(paste(outputFolder,"/tmp/input_no_duplicate.bim" ,sep = ""))
+
+  # ### Small table
   cat( "\n",
        " .-------------------------------------------.\n",
        "|            Summary of input data           |\n",
@@ -95,28 +93,28 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
        "|    ", ctrlNumber , "         ", caseNumber ,"             ", snpNumber , "    |\n",
        "+-------------------------+------------------+\n \n"   )
 
+
+
   ################ Qualty Control and summary of big steps  ################
-  if(isTRUE(file.exists(paste( outputFolder, "clean/clean1.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "clean/clean2.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "clean/clean3.bim" , sep = ""))))
+  if(isTRUE(file.exists(paste( outputFolder, "/clean/clean1.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "/clean/clean2.bim" , sep = ""))) && isTRUE(file.exists(paste( outputFolder, "/clean/clean3.bim" , sep = ""))))
   {
-    clean1_snp <- R.utils::countLines(paste( outputFolder, "clean/clean1.bim" , sep = ""))
+    clean1_snp <- R.utils::countLines(paste( outputFolder, "/clean/clean1.bim" , sep = ""))
     clean1_snp <- gsub("[A-Z]/.,:", "", clean1_snp)
-    clean1_ind <-  R.utils::countLines(paste(outputFolder, "clean/clean1.fam" , sep = ""))
+    clean1_ind <- R.utils::countLines(paste( outputFolder, "/clean/clean1.fam" , sep = ""))
     clean1_ind <- gsub("[A-Z]/.,:", "", clean1_ind)
-
-    clean2_snp <- R.utils::countLines(paste(outputFolder, "clean/clean2.bim" , sep = ""))
+    clean2_snp <- R.utils::countLines(paste( outputFolder, "/clean/clean2.bim" , sep = ""))
     clean2_snp <- gsub("[A-Z]/.,:", "", clean2_snp)
-    clean2_ind <- R.utils::countLines(paste(outputFolder, "clean/clean2.fam" , sep = ""))
+    clean2_ind <- R.utils::countLines(paste( outputFolder, "/clean/clean2.fam" , sep = ""))
     clean2_ind <- gsub("[A-Z]/.,:", "", clean2_ind)
-
-    clean3_snp <- R.utils::countLines(paste(outputFolder, outputFile , "_postQC.bim" , sep = "")) ####******** MODIFIER. A VERIFIER DANS QC.R SI CA MARCHE !!
+    clean3_snp <- R.utils::countLines(paste(outputFile , "_postQC.bim" , sep = ""))
     clean3_snp <- gsub("[A-Z]/.,:", "", clean3_snp)
-    clean3_ind <- R.utils::countLines(paste(outputFolder, outputFile , "_postQC.fam"  , sep = ""))
+    clean3_ind <- R.utils::countLines(paste(outputFile , "_postQC.fam" , sep = ""))
     clean3_ind <- gsub("[A-Z]/.,:", "", clean3_ind)
-
-    if(file.exists(paste( outputFolder, "tmp/snp_chrXYMT-biallelic_to_exlude.txt" , sep = "")))
+    if(file.exists(paste( outputFolder, "tmp/snp_chrXYMT_to_exlude.txt" , sep = "")))
     {
-      snp_chr <- R.utils::countLines(paste( outputFolder, "tmp/snp_chrXYMT-biallelic_to_exlude.txt" , sep = ""))
+      snp_chr <- R.utils::countLines(paste( outputFolder, "tmp/snp_chrXYMT_to_exlude.txt" , sep = ""))
       snp_chr <- gsub("[A-Z]/.,:", "", snp_chr)
+
       if( snp_chr > 0 ){cat( "\n " , snp_chr  , "SNPs on chromosome X, Y , mitochondrial and/or bi-allelic SNPs removed \n")}
 
     }
@@ -136,12 +134,12 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
   }
 
   ################ Genotype Summary after QC  ################
-  if(file.exists(paste(outputFolder , outputFile , "_postQC.bed" , sep = "")))
+  if(file.exists(paste(outputFile , "_postQC.bed" , sep = "")))
   {
-    geno <- snpStats::read.plink(paste(outputFolder , outputFile , "_postQC.bed" , sep = "") , paste(outputFolder, outputFile , "_postQC.bim" , sep = "") , paste(outputFolder, outputFile , "_postQC.fam" , sep = "") , na.strings = "-9" )
-    snp <- R.utils::countLines(paste( outputFolder, "clean/clean1.bim" , sep = ""))
+    geno <- genio::read_plink(paste( outputFile , "_postQC" , sep = "") )
+    snp <- R.utils::countLines(paste( outputFolder, "/clean/clean1.bim" , sep = ""))
     snp <- gsub("[A-Z]/.,:", "", clean1_snp)
-    ind <-  R.utils::countLines(paste(outputFolder, "clean/clean1.fam" , sep = ""))
+    ind <-  R.utils::countLines(paste(outputFolder, "/clean/clean1.fam" , sep = ""))
     ind <- gsub("[A-Z]/.,:", "", clean1_ind)
 
     cat( "\n",
@@ -154,25 +152,6 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
          "@-------------------------+------------------@\n \n"   )
 
   }
-}
-################ Genotype Summary after QC  ################
-if(file.exists(paste(outputFolder , outputFile , "_postQC.bed" , sep = "")))
-{
-  geno <- snpStats::read.plink(paste(outputFolder , outputFile , "_postQC.bed" , sep = "") , paste(outputFolder, outputFile , "_postQC.bim" , sep = "") , paste(outputFolder, outputFile , "_postQC.fam" , sep = "") , na.strings = "-9" )
-  snp <- R.utils::countLines(paste( outputFolder, "clean/clean1.bim" , sep = ""))
-  snp <- gsub("[A-Z]/.,:", "", clean1_snp)
-  ind <-  R.utils::countLines(paste(outputFolder, "clean/clean1.fam" , sep = ""))
-  ind <- gsub("[A-Z]/.,:", "", clean1_ind)
-
-  cat( "\n",
-       "@--------------------------------------------@\n",
-       "|            Summary of post QC data         |\n",
-       "+-------------------------+------------------+\n"  ,
-       "|  Number of individuals  |  Numbers of SNP  |\n",
-       "+-------------------------+------------------+\n"  ,
-       "|         ", indNumber , "                    " , snp ,"   |\n",
-       "@-------------------------+------------------@\n \n"   )
-
 }
 
 
