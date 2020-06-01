@@ -18,7 +18,13 @@
 ####  	7- Hardy weinberg equilibrium threshold (--hwe)
 
 
+plink(){
 
+/usr/bin/plink1.9 "$@"
+}
+export plink
+
+if  [ $# -ne 8 ] ;
 
 x=$1
 y=$(echo $x | tail -c 5)
