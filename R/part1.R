@@ -155,6 +155,26 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
 
   }
 }
+################ Genotype Summary after QC  ################
+if(file.exists(paste(outputFolder , outputFile , "_postQC.bed" , sep = "")))
+{
+  geno <- snpStats::read.plink(paste(outputFolder , outputFile , "_postQC.bed" , sep = "") , paste(outputFolder, outputFile , "_postQC.bim" , sep = "") , paste(outputFolder, outputFile , "_postQC.fam" , sep = "") , na.strings = "-9" )
+  snp <- R.utils::countLines(paste( outputFolder, "clean/clean1.bim" , sep = ""))
+  snp <- gsub("[A-Z]/.,:", "", clean1_snp)
+  ind <-  R.utils::countLines(paste(outputFolder, "clean/clean1.fam" , sep = ""))
+  ind <- gsub("[A-Z]/.,:", "", clean1_ind)
+
+  cat( "\n",
+       "@--------------------------------------------@\n",
+       "|            Summary of post QC data         |\n",
+       "+-------------------------+------------------+\n"  ,
+       "|  Number of individuals  |  Numbers of SNP  |\n",
+       "+-------------------------+------------------+\n"  ,
+       "|         ", indNumber , "                    " , snp ,"   |\n",
+       "@-------------------------+------------------@\n \n"   )
+
+}
+
 
 
 #############################################################
