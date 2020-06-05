@@ -151,15 +151,14 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
 #' @export
 #'
 
-
-plink2vcf <- function( dataFolder, plinkFile, outputFile, outputFolder){
+QC_for_imputation <- function( dataFolder, plinkFile, outputFile, outputFolder){
   start_time <- Sys.time()
   if(!dir.exists(dataFolder)){stop("dataFolder directory not found")}
   if(!is.character(plinkFile)){stop("plinkFile must be character")}
   if(!is.character(outputFile)){stop("outputFile must be character")}
 
   ################ Data and scripts loading from HLAfix package  ################
-  plink2VCF <- system.file("Shell", "plink2VCF.sh", package = "HLAfix") # script with bash and plink commands
+ # script with bash and plink commands
   HRCcheckbim_pl <- system.file("Perl", "HRC-1000G-check-bim_v4.2.7.pl" , package="HLAfix" ) # comes with imputePrepSanger pipeline
   updateDuplicates <- system.file("awk", "updateDuplicates.awk" , package="HLAfix" ) # comes with imputePrepSanger pipeline
 
@@ -191,131 +190,149 @@ plink2vcf <- function( dataFolder, plinkFile, outputFile, outputFolder){
   }
 
   ################        QC and conversion into vcf file.       ################
-  system(paste("sh" , plink2VCF , HRCcheckbim_pl , dataFolder, plinkFile , outputFolder ,  outputFile , tabFile , fastaFile ,  updateDuplicates , sep = " "))
+
+  File_for_imputation <- readline(prompt =  " \n If you want to output have plink files press Enter, otherwise if you want to output a vcf file write vcf ")
+  if(nchar(File_for_imputation) == 0) {
+    File_for_imputation1 <- system.file("inst", "output_plink_file.sh", package = "HLAfix")
+  } else {
+    File_for_imputation1 <- system.file("inst", "output_vcf_file.sh", package = "HLAfix")
+  }
+
+  system(paste("sh" , File_for_imputation1 , HRCcheckbim_pl , dataFolder, plinkFile , outputFolder ,  outputFile , tabFile , fastaFile ,  updateDuplicates , sep = " "))
   # end_time <- Sys.time()
   # cat("\n Running time : \n")
   # end_time - start_time
 }
 
 
+  #############################################################
+  ###  PCA for population stratification and visualization  ###
+  #############################################################
 
-#############################################################
-###  PCA for population stratification and visualization  ###
-#############################################################
+  #' Checking for population stratification in order to adjust and get homogenous sample
+  #'
+  #' @param bedFile .bed file containing the packed binary SNP genotype data
+  #' @param bimFile .bim file containingthe SNP descriptions
+  #' @param famFile .fam file containing subject (and, possibly, family) identifiers. This is basically a tab-delimited "pedfile"
+  #' @param workingFolder folder where to save the result
+  #' @import ggplot2
+  #' @importFrom grDevices dev.off  pdf
+  #' @importFrom utils read.table write.table
+  #' @return Return a plot sample's individuals ancestry with 3 references populations: European (CEU) , East-Asian (CHB) and African (YRI)
+  #' @export
+
+  popStrat <- function( bedFile ,  bimFile  , famFile  , workingFolder)
+  {
+    plink <- as.character(readline(prompt =  " \n Enter another desired version of plink, otherwise press Enter for the default plink1.9 version : " ))
+    if(nchar(plink) == 0) {
+      plink <- as.character("plink1.9")
+    }
+
+    panelFile_csv <- readline(prompt =  " \n Enter the path of the .csv file with tabulation separator for the graphic representation ,or press Enter to use info_pop.csv by default for AFR_ASN_EUR data : ")
+    if(nchar(panelFile_csv) == 0) {
+      panelFile <- system.file("extdata", "info_pop.csv", package = "HLAfix")
+    } else {
+      panelFile <- read.table(panelFile_csv)
+    }
+
+    data_file <- as.character(readline(prompt =  " \n Enter the path of .bim file of the reference data for the population stratification study, or press Enter to use the default AFR_ASN_EUR data files : " ))
+    if(nchar(data_file) == 0) {
+      reference <- system.file("extdata", "AFR_ASN_EUR.bim" , package = "HLAfix" , mustWork = TRUE)
+    } else {
+      reference <- genio::read_bim(data_file)
+    }
+    ref <- gsub(".bim","", reference)
+
+    data_file_corresp <- readline(prompt =  " \n Enter path corresponding file .txt for population stratification ,or press Enter to use the default afr_asn_eur :")
+    if(nchar(data_file_corresp) == 0) {
+      list_reference <- system.file("extdata", "afr_asn_eur_snp.txt" , package = "HLAfix" , mustWork = TRUE)
+    } else {
+      list_reference <- read.table(data_file_corresp)
+    }
+
+    system(paste("mkdir" ," " ,"-p" ," " , workingFolder   ,sep = ""))
+    file <- unlist(strsplit(bimFile,"\\."))[1]  #recover filenames without extension
+    system(paste(plink ," ", "--bfile" ," "  , file , " " , "--write-snplist  --out" ," ",  workingFolder ,"/sample" ,sep = "" ))
+
+    # Write a list of snp contained in user's file
+    sample <- gsub(".bim","", bimFile) #user's file without extension
+    system(paste(plink," " , "--bfile " , ref , " --extract " ,workingFolder ,"/sample.snplist ", " --make-bed --out ", workingFolder , "/1KG_subset" , sep = "" ))  ## Extract from 1KG, snp in common with sample data
+    system(paste(plink," " , " --bfile " , sample ," --extract " , list_reference , " --make-bed --out ", workingFolder , "/sample_subset" , sep = "" ))  ## Extract from Sample, snp in common with 1kg
+    system(paste(plink," " ," --bfile " , workingFolder , "/sample_subset" ," --bmerge ", workingFolder , "/1KG_subset"  ," --make-bed --out " , workingFolder , "/merged_data" , sep = ""))  ## Merge of 1KG and Sample rows
+
+    if(file.exists(paste(workingFolder, "/merged_data-merge.missnp",sep = "")))
+    { # if there are SNP with 3+ alleles in the dataset, a file .missnp is created.
+      system(paste(plink," " , "--bfile " , workingFolder , "/sample_subset" ," --exclude ", workingFolder , "/merged_data-merge.missnp"  ," --make-bed --out " , workingFolder , "/sample_subset2" , sep = "")) ## Multi allelic's SNP removal
+      system(paste(plink," " , "--bfile " , workingFolder , "/sample_subset2" ," "," --bmerge ", workingFolder , "/1KG_subset"  ," --make-bed --out " , workingFolder , "/merged_data" , sep = "")) ## Merge of 1KG and Sample rows
+      system(paste(plink," " , "--bfile " , workingFolder , "/merged_data", "  --pca --out ", workingFolder, "/pca_plink" , sep = ""))
+      system(paste("mv ", workingFolder , "/pca_plink.eigenvec" ," " , workingFolder , "/pca_plink.evec" ,sep = ""))
+
+    }else{
+      system(paste(plink," " , "--bfile " , workingFolder , "/merged_data", "  --pca --out ", workingFolder, "/pca_plink" , sep = ""))
+      system(paste("mv ", workingFolder , "/pca_plink.eigenvec" ," " , workingFolder , "/pca_plink.evec" ,sep = ""))
+    }
+    cat(paste(workingFolder , "/pca_plink.evec" , sep = ""))
+
+    ############################  GRAPHIC REPRESENTATION OF THE ACP  ################################################
+    acp <- as.data.frame(read.table(paste(workingFolder , "/pca_plink.evec" , sep = ""))) # Col: FID IID followed by all different PCs
+    panel <- read.csv(panelFile, header = TRUE,sep = "\t" )
+
+    # Create a colunm with pop name for 1KG individuals
+    for(x in panel[!is.na(panel[,1]),1] )
+    { x <- as.character(x)
+    acp[acp[,2]==x,23] = panel[panel[,1]==x,3]
+    }
+
+    # Recode
+    acp[,1] <- ifelse(acp$V23=="AMR", "American",
+                      ifelse(acp$V23=="ASN", "East Asian",
+                             ifelse(acp$V23=="AFR", "African",
+                                    ifelse(acp$V23=="SAN", "South Asian",
+                                           ifelse(acp$V23=="EUR", "European","European"))))) # remplace col FIID by the group
+
+    # Recode what left into "sample" group
+    suppressWarnings({
+      acp[is.na(acp[,1]),1] <- "Sample"
+    })
+
+    # # Warning message
+    names(acp)[1] <- "group"
+    names(acp)[2] <- "IID"
+    names(acp)[3] <- "PC1"
+    names(acp)[4] <- "PC2"
+    selection <- acp[,c("group","PC1","PC2")]
+
+    ## SAVE THE FILE THAT IS USED FOR THE PLOT
+    utils::write.table(acp , paste(workingFolder , "/pca_used_for_plot.csv", sep = "") , col.names = TRUE, row.names = FALSE , sep = "," )
+    cat(paste(workingFolder , "/pca_used_for_plot.csv is saved. \n ", sep = ""))
+
+    message("Warning: \n Ancestry identification of individuals is done with plink but it is less precise than EigenSoft and doesn't remove outliers automatically. \n If you want you can use Eigensoft and be sure of your sample's homogenesity before continuing \n")
+    message("Please remove outliers and submit bed bm fam files with homogeneity ")
+
+    # ANCESTRY PLOT
+    data <- selection[(selection[,"group"]=="East Asian" | selection[,"group"]=="African"|selection[,"group"]=="European" ),]
+    data_sample <- selection[(selection[,"group"]=="Sample" ),]
+    # Counts
+    nAMR <- nrow(selection[selection[,"group"]=="American",])
+    nASN <- nrow(selection[selection[,"group"]=="East Asian",])
+    nAFR <- nrow(selection[selection[,"group"]=="African",])
+    nSAN <- nrow(selection[selection[,"group"]=="South Asian",])
+    nEUR <-  nrow(selection[selection[,"group"]=="European",])
+    nSample <- nrow(data_sample)
+
+    acp_plot <- ggplot() + geom_point(data=data,aes(x=PC1, y=PC2 , color=group )) + geom_point(data=data_sample, aes(x=PC1, y=PC2,colour=group)) + scale_color_manual(labels = c(paste("African (N=",nAFR, ")",sep = ""), paste("East Asian (N=",nASN, ")",sep = "") , paste("European (N=",nEUR, ")",sep = ""), paste("Sample (N=",nSample, ")",sep = "")) ,values = c("#f3ab55","#65da11","#1563ea","#f244da","#c682ec" ))
 
 
-#' Checking for population stratification in order to adjust and get homogenous sample
-#'
-#' @param bedFile .bed file containing the packed binary SNP genotype data
-#' @param bimFile .bim file containingthe SNP descriptions
-#' @param famFile .fam file containing subject (and, possibly, family) identifiers. This is basically a tab-delimited "pedfile"
-#' @param workingFolder folder where to save the result
-#' @import ggplot2
-#' @importFrom grDevices dev.off  pdf
-#' @importFrom utils read.table write.table
-#' @return Return a plot sample's individuals ancestry with 3 references populations: European (CEU) , East-Asian (CHB) and African (YRI)
-#' @export
-
-
-popStrat <- function( bedFile ,  bimFile  , famFile  , workingFolder)
-{
-
-  ################ Data and scripts loading from HLAfix package  ################
-  ## Reference population
-  # thousgen <- system.file("extdata", "CEU_YRI_CHB.bim" , package = "HLAfix")
-  thousgen <- system.file("extdata", "AFR_ASN_EUR.bim" , package = "HLAfix")
-  thous <- gsub(".bim","", thousgen)
-  # list_thousgen <- system.file("extdata", "ceu_yri_chb_snp.txt" , package = "HLAfix")
-  list_thousgen <- system.file("extdata", "afr_asn_eur_snp.txt" , package = "HLAfix")
-  system(paste("cat " , bimFile , " > " ,workingFolder ,"sample_snp_list.txt"  ,sep = "")) # Write a list of snp contained in user's file
-  sample <- gsub(".bim","", bimFile) #user's file without extension
-
-
-  system(paste("plink --bfile " , thous , " --extract " ,workingFolder ,"sample_snp_list.txt ", " --make-bed --out ", workingFolder , "1KG_subset" , sep = "" )) ## Extract from 1KG, snp in common with sample data
-  system(paste("plink --bfile " , sample , "  --extract " , list_thousgen , " --make-bed --out ", workingFolder , "sample_subset" , sep = "" )) ## Extract from Sample, snp in common with 1kg
-  system(paste("plink --bfile " , workingFolder , "sample_subset" ," --bmerge ", workingFolder , "1KG_subset"  ," --make-bed --out " , workingFolder , "merged_data" , sep = "")) ## Merge of 1KG and Sample rows
-
-  if(file.exists(paste(workingFolder, "merged_data-merge.missnp",sep = "")))
-  { # if there are SNP with 3+ alleles in the dataset, a file .missnp is created.
-    system(paste("plink --bfile " , workingFolder , "sample_subset" ," --exclude ", workingFolder , "merged_data-merge.missnp"  ," --make-bed --out " , workingFolder , "sample_subset2" , sep = "")) ## Multi allelic's SNP removal
-    system(paste("plink --bfile " , workingFolder , "sample_subset2" ," --bmerge ", workingFolder , "1KG_subset"  ," --make-bed --out " , workingFolder , "merged_data" , sep = "")) ## Merge of 1KG and Sample rows
-    system(paste("plink --bfile " , workingFolder , "merged_data", "  --pca --out ", workingFolder, "pca_plink" , sep = ""))
-    system(paste("mv ", workingFolder , "pca_plink.eigenvec" ," " , workingFolder , "pca_plink.evec" ,sep = ""))
-
-  }else{
-    system(paste("plink --bfile " , workingFolder , "merged_data", "  --pca --out ", workingFolder, "pca_plink" , sep = ""))
-    system(paste("mv ", workingFolder , "pca_plink.eigenvec" ," " , workingFolder , "pca_plink.evec" ,sep = ""))
-  }
-  ############################  GRAPHIC REPRESENTATION OF THE ACP  ################################################
-  acp <- as.data.frame(read.table(paste( workingFolder , "pca_plink.evec" , sep = ""), sep = " " , dec = ".", fill = TRUE )) # Col: FID IID followed by all different PCs
-  # panelFile <- system.file("extdata", "integrated_call_samples_1kg_panel.rds", package = "HLAfix")
-  # panel <- readRDS(file=panelFile)
-  panelFile <- system.file("extdata", "info_pop.csv", package = "HLAfix")
-  panel <- read.csv(panelFile, header = TRUE,sep = "," )
-
- ## check for create plot acp !!!!
-
-  ## SAVE THE FILE THAT IS USED FOR THE PLOT
-  utils::write.table(acp , paste(workingFolder , "pca_used_for_plot.csv", sep = "") , col.names = TRUE, row.names = FALSE , sep = "," )
-  cat(paste(workingFolder , "pca_used_for_plot.csv is saved. \n ", sep = ""))
-
-  message("Warning: \n Ancestry identification of individuals is done with plink but it is less precise than EigenSoft and doesn't remove outliers automatically. \n If you want you can use Eigensoft and be sure of your sample's homogenesity before continuing \n")
-  message("Please remove outliers and submit bed bm fam files with homogeneity ")
-
-  # ANCESTRY PLOT
-    # acp_plot<- ggplot2::ggplot(selection , aes(x=PC1, y=PC2, color=group)) + geom_point() + ggtitle("Ancestry plot ") + xlab("PC1") + ylab("PC2")
-  data_1kg <- selection[(selection[,"group"]=="EUR" |selection[,"group"]=="East-Asian" | selection[,"group"]=="AFR"| selection[,"group"]=="Indian"),]
-  data_sample <- selection[selection[,"group"]=="sample",]
-  # Counts
-  nSample <- nrow(data_sample)
-  nAFR <- nrow(selection[selection[,"group"]=="AFR",])
-  nASN <- nrow(selection[selection[,"group"]=="East-Asian",])
-  nEUR <-  nrow(selection[selection[,"group"]=="EUR",])
-  nIndian <- nrow(selection[selection[,"group"]=="Indian",])
-
-  acp_plot <- ggplot2::ggplot(data_sample , aes(x=PC1, y=PC2, color=group)) + geom_point(data=data_1kg , aes(x=PC1,y=PC2,color=group) , alpha = 0.2,size=2) + geom_point(size=2) + ggtitle("Ancestry plot ") + xlab("PC1") + ylab("PC2") +  theme(plot.title = element_text(hjust = 0.5)) +  scale_color_manual(labels = c(paste("AFR (N=",nAFR, ")",sep = ""), paste("East-Asian (N=",nASN, ")",sep = "") , paste("EUR (N=",nEUR, ")",sep = ""), paste("Indian (N=",nIndian, ")",sep = ""), paste("Sample (N=",nSample, ")",sep = "")) ,values = c("#f3ab55","#65da11","#1563ea","#f244da","#c682ec" ))
-
-  pcaFile <- acp[,c(2,3,4)] # col IID, PC1 and PC2
-  pcaFile[,1] <- gsub("NA\\d{5}","1KG",pcaFile[,1])
-  pcaFile[,1] <- gsub("HG\\d{5}","1KG",pcaFile[,1])
-  pcaFile <- pcaFile[pcaFile[,1]!="1KG",] # exclude info concerning 1KG individuals
-  colnames(pcaFile)<- c("sample.id","PC1","PC2")
-  utils::write.table(pcaFile , paste(workingFolder , "pcaFile.csv", sep = "") , col.names = TRUE, row.names = FALSE , sep = "," )
-  grDevices::pdf(file = paste(workingFolder , "Ancestry plot.pdf", sep = ""))
+    pcaFile <- acp[,c(2,3,4)] # col IID, PC1 and PC2
+    pcaFile[,1] <- gsub("NA\\d{5}","1KG",pcaFile[,1])
+    pcaFile[,1] <- gsub("HG\\d{5}","1KG",pcaFile[,1])
+    pcaFile <- pcaFile[pcaFile[,1]!="1KG",] # exclude info concerning 1KG individuals
+    colnames(pcaFile)<- c("Sample.id","PC1","PC2")
+    utils::write.table(pcaFile , paste(workingFolder , "/pcaFile.csv", sep = "") , col.names = TRUE, row.names = FALSE , sep = "," )
+    grDevices::pdf(file = paste(workingFolder , "/Ancestry_plot.pdf", sep = ""))
     print(acp_plot)
-  grDevices::dev.off()
-  rm(panel) # remove from env the panel data
-  # remove intermediary files created
-  system(paste("rm ",workingFolder,"1KG_subset* ",workingFolder,"merged_data* ",workingFolder,"sample_subset* ",workingFolder,"sample_snp_list.txt " , sep = "" ))
-}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    grDevices::dev.off()
+    rm(panel) # remove from env the panel data
+    # remove intermediary files created
+    system(paste("rm ",workingFolder,"/1KG_subset* ",workingFolder,"/merged_data* ",workingFolder,"/sample_subset* ",workingFolder,"/sample.snplist " ,workingFolder,"/sample.log " , sep = "" ))
+  }
