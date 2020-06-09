@@ -15,6 +15,11 @@
 #### 	3- Folder where the result will be saved
 ####  	4- Name of VCF file returned
 
+plink(){
+
+/usr/bin/plink1.9 "$@"
+}
+export plink
 
 if  [ $# -ne 8 ] ;
 then
@@ -38,15 +43,14 @@ else
 			if [ ! -x "tmp/" ] &&  [ ! -x "clean/" ];
 			then
 				mkdir tmp/
-			    mkdir clean/
+			  mkdir clean/
 			fi
 
 
 	 			### ImputePrepSanger
-
 	 			 	perl $imputePrepSanger -b $dataFolder$input".bim" -f $dataFolder$input".frq" -r $tabFile -h
 				  ## Run-plink.sh produced by perl but the following lines are executed instead
-			mv ./Force-Allele1-$input-HRC.txt tmp/
+			mv $dataFolderForce-Allele1-$input-HRC.txt tmp/
 
 				### List of duplicate and removal
 			plink  --bfile $dataFolder$input --write-snplist --out tmp/all_input_snps
@@ -54,10 +58,10 @@ else
 			plink --bfile $dataFolder$input --exclude tmp/duplicated_snps.txt --make-bed --out clean/TEMP1
 
 				### Update Chromosome info and positions
-			plink  --bfile clean/TEMP1 --update-chr Chromosome-$input-HRC.txt --make-bed --out clean/TEMP2
-			plink  --bfile clean/TEMP2 --update-map Position-$input-HRC.txt --make-bed --out clean/TEMP3
+			plink  --bfile clean/TEMP1 --update-chr $dataFolderChromosome-$input-HRC.txt --make-bed --out clean/TEMP2
+			plink  --bfile clean/TEMP2 --update-map $dataFolderPosition-$input-HRC.txt --make-bed --out clean/TEMP3
 
-			plink  --bfile clean/TEMP3 --flip Strand-Flip-$input-HRC.txt --make-bed --out clean/TEMP4
+			plink  --bfile clean/TEMP3 --flip $dataFolder/Strand-Flip-$input-HRC.txt --make-bed --out clean/TEMP4
 			plink  --bfile clean/TEMP4 --reference-allele tmp/Force-Allele1-$input-HRC.txt --make-bed --out clean/TEMP5
 			plink  --bfile clean/TEMP5 --list-duplicate-vars ids-only --reference-allele tmp/Force-Allele1-$input-HRC.txt --make-bed --out clean/TEMP6
 
@@ -113,20 +117,21 @@ fi
 		   awk  'END {print "Number of duplicates removed: ", NR}' tmp/duplicatesRemoved.txt
 		   echo The duplicates removed can be found in tmp/duplicatesRemoved.txt and tmp/duplicatesPairs.txt
 		else
-			mv ./Force-Allele1-$input-HRC.txt tmp/
+			mv tmp/Force-Allele1-$input-HRC.txt tmp/
  			echo Number of duplicates removed: 0 .
  		fi
 
-#
-# 		   plink --bfile tmp/DATA_$input-updated  --a2-allele tmp/Force-Allele1-$input-HRC.txt --recode vcf bgz --keep-allele-order --out $filename
-# filename=$filename.vcf.gz
-# if [[ ! -f "$filename" ]];
-# then
-# 	echo "ERROR : No such file plink2VCF.sh line 118"
-# 	exit 1
-# else
-# 	echo "VCF successfully created : $filename.vcf"
-# fi
+
+		   plink --bfile tmp/DATA_$input-updated  --a2-allele tmp/Force-Allele1-$input-HRC.txt --recode vcf bgz --keep-allele-order --out $filename
+filename=$filename.vcf.gz
+if [[ ! -f "$filename" ]];
+then
+	echo "ERROR : No such file plink2VCF.sh line 118"
+	exit 1
+else
+	echo "VCF successfully created : $filename.vcf"
+fi
+fi
 # 			rm -R tmp/ clean/
 #
 #

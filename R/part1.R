@@ -204,15 +204,16 @@ QC_for_imputation <- function( dataFolder, plinkFile, outputFile, outputFolder){
   }
 
   ################        QC and conversion into vcf file.       ################
-
-  File_for_imputation <- readline(prompt =  " \n If you want to output have plink files press Enter, otherwise if you want to output a vcf file write vcf ")
-  if(nchar(File_for_imputation) == 0) {
-    File_for_imputation1 <- system.file("inst", "output_plink_file.sh", package = "HLAfix")
+  cat("Please choose the output file type")
+  output_choose=c("vcf","plink")
+  answer <- menu(output_choose)
+  if(answer == 1){
+    File_for_imputation <- system.file("inst", "output_plink_file.sh", package = "HLAfix")
   } else {
-    File_for_imputation1 <- system.file("inst", "output_vcf_file.sh", package = "HLAfix")
+    File_for_imputation <- system.file("inst", "output_vcf_file.sh", package = "HLAfix")
   }
 
-  system(paste("sh" , File_for_imputation1 , HRCcheckbim_pl , dataFolder, plinkFile , outputFolder ,  outputFile , tabFile , fastaFile ,  updateDuplicates , sep = " "))
+  system(paste("sh" , File_for_imputation , HRCcheckbim_pl , dataFolder, plinkFile , outputFolder ,  outputFile , tabFile , fastaFile ,  updateDuplicates , sep = " "))
   # end_time <- Sys.time()
   # cat("\n Running time : \n")
   # end_time - start_time
