@@ -149,6 +149,7 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
   }
 }
 
+
 #############################################################
 ###    plink2VCF : Sanger's QC and conversion into VCF    ###
 #############################################################
@@ -165,59 +166,62 @@ firstQC <- function( bedFile=NULL , bimFile=NULL , famFile=NULL ,vcf=NULL, outpu
 #' @export
 #'
 
-QC_for_imputation <- function( dataFolder, plinkFile, outputFile, outputFolder){
+
+plink2vcf <- function( dataFolder, plinkFile, outputFile, outputFolder){
   start_time <- Sys.time()
   if(!dir.exists(dataFolder)){stop("dataFolder directory not found")}
   if(!is.character(plinkFile)){stop("plinkFile must be character")}
   if(!is.character(outputFile)){stop("outputFile must be character")}
 
   ################ Data and scripts loading from HLAfix package  ################
-  # script with bash and plink commands
-  HRCcheckbim_pl <- system.file("Perl", "HRC-1000G-check-bim_v4.2.7.pl" , package="HLAfix" ) # comes with imputePrepSanger pipeline
+  plink2VCF <- system.file("Shell", "plink2VCF.sh", package = "HLAfix") # script with bash and plink commands
+  HRCcheckbim_pl <- system.file("Perl", "HRC-1000G-check-bim.pl" , package="HLAfix" ) # comes with imputePrepSanger pipeline
   updateDuplicates <- system.file("awk", "updateDuplicates.awk" , package="HLAfix" ) # comes with imputePrepSanger pipeline
 
   ################ Download dataset
   ## fasta reference genome from 1000 genome project
-  system(paste("wget -nc ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz -P ", outputFolder ,sep=""))
-  if(file.exists(paste(outputFolder,"human_g1k_v37.fasta.gz",sep="")))
-  {
-    system(paste("gunzip ", outputFolder ,"human_g1k_v37.fasta.gz",sep=""))
-    fastaFile <- paste(outputFolder,"human_g1k_v37.fasta",sep="")
-    system(paste("rm ", outputFolder,"human_g1k_v37.fasta.gz",sep=""))
+  # system(paste("wget -nc ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz -P ", outputFolder ,sep=""))
+  # if(file.exists(paste(outputFolder,"human_g1k_v37.fasta.gz",sep="")))
+  # {
+  #   system(paste("gunzip ", outputFolder ,"human_g1k_v37.fasta.gz",sep=""))
+  fastaFile <- paste(outputFolder,"/human_g1k_v37.fasta",sep="")
+  #   system(paste("rm ", outputFolder,"human_g1k_v37.fasta.gz",sep=""))
+  #
+  # }else{
+  #   stop("human_g1k_v37.fasta.gz downloading didn't work. We used the following url: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz ")
+  # }
 
-  }else{
-    stop("human_g1k_v37.fasta.gz downloading didn't work. We used the following url: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz ")
-  }
 
-
-  ## reference genome from HRC
-  system(paste("wget -nc ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1/HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz -P ", outputFolder ,sep="")) # -c for continue the download if for a reason or another it is in pause and -p for
-
-  if(file.exists(paste(outputFolder,"HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz",sep="")))
-  {
-    system(paste("gunzip ", outputFolder ,"HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz",sep=""))
-    tabFile <- paste(outputFolder,"HRC.r1.GRCh37.autosomes.mac5.sites.tab",sep="")
-    system(paste("rm ", outputFolder,"HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz",sep=""))
-
-  }else{
-    stop("HRC.r1.GRCh37.autosomes.mac5.sites.tab downloading didn't work. We used the following url: ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1/HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz ")
-  }
+  # ## reference genome from HRC
+  # system(paste("wget -nc ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1/HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz -P ", outputFolder ,sep="")) # -c for continue the download if for a reason or another it is in pause and -p for
+  #
+  # if(file.exists(paste(outputFolder,"HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz",sep="")))
+  # {
+  #   system(paste("gunzip ", outputFolder ,"HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz",sep=""))
+  tabFile <- paste(outputFolder,"/HRC.r1.GRCh37.autosomes.mac5.sites.tab",sep="")
+  #   system(paste("rm ", outputFolder,"HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz",sep=""))
+  #
+  # }else{
+  #   stop("HRC.r1.GRCh37.autosomes.mac5.sites.tab downloading didn't work. We used the following url: ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1/HRC.r1.GRCh37.autosomes.mac5.sites.tab.gz ")
+  # }
 
   ################        QC and conversion into vcf file.       ################
   cat("Please choose the output file type")
-  output_choose=c("vcf","plink")
-  answer <- menu(output_choose)
-  if(answer == 1){
-    File_for_imputation <- system.file("inst", "output_plink_file.sh", package = "HLAfix")
+  choix=c("vcf","plink")
+  answer <- menu(choix)
+  if(answer ==1){
+    system(paste("sh" , plink2VCF , HRCcheckbim_pl , dataFolder, plinkFile , outputFolder ,  outputFile , tabFile , fastaFile ,  updateDuplicates , sep = " "))
   } else {
-    File_for_imputation <- system.file("inst", "output_vcf_file.sh", package = "HLAfix")
+    system(paste("sh" , plink2VCF , HRCcheckbim_pl , dataFolder, plinkFile , outputFolder ,  outputFile , tabFile , fastaFile ,  updateDuplicates , sep = " "))
+    system(paste(" plink ", "--bfile", "tmp/DATA_$input-updated" ,   "--a2-allele" ,  "tmp/Force-Allele1-$input-HRC.txt" , "--recode" ,  "vcf" ,  "bgz" ,  "--keep-allele-order" ,  "--out" ,  "$filename" , sep = " "))
+
   }
 
-  system(paste("sh" , File_for_imputation , HRCcheckbim_pl , dataFolder, plinkFile , outputFolder ,  outputFile , tabFile , fastaFile ,  updateDuplicates , sep = " "))
   # end_time <- Sys.time()
   # cat("\n Running time : \n")
   # end_time - start_time
 }
+
 
 #############################################################
 ###  PCA for population stratification and visualization  ###
